@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fish and Monster Game Scaled to 50%</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        #background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 50vw; /* Scale background width to 50% of the viewport */
+            height: 50vh; /* Scale background height to 50% of the viewport */
+            z-index: -1; /* Place the background behind everything */
+            object-fit: cover; /* Ensure the GIF covers the scaled area while maintaining aspect ratio */
+        }
+        #score {
+            position: absolute;
+            top: 5px; /* Adjusted for scaling */
+            left: 5px; /* Adjusted for scaling */
+            font-size: 12px; /* Adjusted for scaling */
+            color: white;
+            font-family: Arial, sans-serif;
+            z-index: 1; /* Ensure the score is above the background */
+        }
+        #fish {
+            position: absolute;
+            width: 50px; /* Adjusted for scaling */
+            height: 50px; /* Adjusted for scaling */
+            pointer-events: none; /* Prevent interaction with the GIF */
+            z-index: 1; /* Ensure the fish is above the background */
+        }
+        .monster {
+            position: absolute;
+            width: 50px; /* Adjusted for scaling */
+            height: 50px; /* Adjusted for scaling */
+            pointer-events: none; /* Prevent interaction with the GIF */
+            z-index: 1; /* Ensure the monsters are above the background */
+        }
+    </style>
+</head>
+<body>
+    <img id="background" src="background.gif" alt="Animated Background"> <!-- Scaled Background GIF -->
+    <div id="score">Score: 0</div>
+    <canvas id="gameCanvas"></canvas>
+    <img id="fish" src="fish.gif" alt="Animated Fish"> <!-- Scaled Fish GIF -->
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth / 2; // Scale canvas width to 50%
+        canvas.height = window.innerHeight / 2; // Scale canvas height to 50%
+
+        const fishElement = document.getElementById('fish'); // Reference to the Fish GIF
+        const monsterGifSrc = 'monster.gif'; // Monster GIF
+        const monsters = [];
+        const monsterSize = 50; // Adjusted for scaling
+        let score = 0;
+
+        const fish = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            width: 50, // Adjusted for scaling
+            height: 50, // Adjusted for scaling
+            speed: 2.5, // Adjusted for scaling
+            updatePosition() {
+                fishElement.style.left = `${this.x}px`;
+                fishElement.style.top = `${this.y}px`;
+            }
+        };
+
+        function createMonster() {
+            const monster = document.createElement('img');
+            monster.src = monsterGifSrc;
+            monster.className = 'monster';
+            monster.style.left = `${Math.random() * (canvas.width - monsterSize)}px`;
+            monster.style.top = `${Math.random() * (canvas.height - monsterSize)}px`;
+            document.body.appendChild(monster);
+            monsters.push({
+                element: monster,
+                x: parseFloat(monster.style.left),
+                y: parseFloat(monster.style.top)
+            });
+        }
+
+        function checkCollisions() {
+            monsters.forEach((monsterObj, index) => {
+                if (
+                    fish.x < monsterObj.x + monsterSize &&
+                    fish.x + fish.width > monsterObj.x &&
+                    fish.y < monsterObj.y + monsterSize &&
+                    fish.y + fish.height > monsterObj.y
+                ) {
+                    // Remove the monster and update the score
+                    monsterObj.element.remove();
+                    monsters.splice(index, 1);
+                    score += 10;
+                    document.getElementById('score').innerText = `Score: ${score}`;
+                }
+            });
+        }
+
+        function gameLoop() {
+            checkCollisions();
+            requestAnimationFrame(gameLoop);
+        }
+
+        let lastMonsterSpawnTime = 0;
+        function spawnMonsters(timestamp) {
+            if (timestamp - lastMonsterSpawnTime > 3000) { // Spawn a new monster every 3 seconds
+                createMonster();
+                lastMonsterSpawnTime = timestamp;
+            }
+            requestAnimationFrame(spawnMonsters);
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp') {
+                fish.y = Math.max(0, fish.y - fish.speed);
+            } else if (e.key === 'ArrowDown') {
+                fish.y = Math.min(canvas.height - fish.height, fish.y + fish.speed);
+            } else if (e.key === 'ArrowLeft') {
+                fish.x = Math.max(0, fish.x - fish.speed);
+            } else if (e.key === 'ArrowRight') {
+                fish.x = Math.min(canvas.width - fish.width, fish.x + fish.speed);
+            }
+            fish.updatePosition(); // Update the Fish GIF position
+        });
+
+        // Initialize fish position
+        fish.updatePosition();
+
+        // Start the game loop
+        gameLoop();
+        spawnMonsters(0);
+    </script>
+</body>
+</html>
